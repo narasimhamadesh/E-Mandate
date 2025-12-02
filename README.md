@@ -11,3 +11,17 @@ Instructions:
 
 This scaffold includes basic auth flow (access + rotating refresh stored hashed in Redis),
 RBAC middleware, sample routes, and NPCI external call placeholder.
+
+
+
+<!-- 
+
+
+COOKIE_DOMAIN=yourdomain.com
+COOKIE_SECURE=true
+COOKIE_SAMESITE=None    // required for cross-site cookies when secure=true
+
+
+
+
+ -->

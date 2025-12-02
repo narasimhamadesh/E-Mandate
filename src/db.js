@@ -1,4 +1,4 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 const config = require('./config/index');
 
 const db = mysql.createPool({
@@ -11,13 +11,15 @@ const db = mysql.createPool({
   queueLimit: 0
 });
 
-db.getConnection((err, connection) => {
-  if (err) {
-    console.error("Database connection failed:", err);
-  } else {
-    console.log("Connected to MySQL database.");
+// Test DB connection
+(async () => {
+  try {
+    const connection = await db.getConnection();
+    console.log("Connected to MySQL database (Promise Pool).");
     connection.release();
+  } catch (err) {
+    console.error("Database connection failed:", err);
   }
-});
+})();
 
 module.exports = db;

@@ -5,7 +5,7 @@ module.exports = {
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET,
     refreshSecret: process.env.JWT_REFRESH_SECRET,
-    accessExp: process.env.ACCESS_TOKEN_EXP || '1h',
+    accessExp: process.env.ACCESS_TOKEN_EXP || "1h",
     refreshExp: process.env.REFRESH_TOKEN_EXP || '30d',
   },
   db: {
@@ -20,9 +20,16 @@ module.exports = {
     port: Number(process.env.REDIS_PORT || 6379),
     password: process.env.REDIS_PASSWORD || '',
   },
+  // cookie: {
+  //   domain: process.env.COOKIE_DOMAIN || 'localhost',
+  //   secure: process.env.COOKIE_SECURE === 'false' ? false : true,
+  //   sameSite: process.env.COOKIE_SAMESITE || 'Strict',
+  // }
+
   cookie: {
-    domain: process.env.COOKIE_DOMAIN || 'localhost',
-    secure: process.env.COOKIE_SECURE === 'true',
-    sameSite: process.env.COOKIE_SAMESITE || 'Strict',
+    domain: process.env.COOKIE_DOMAIN || undefined,   // IMPORTANT
+    secure: process.env.COOKIE_SECURE === 'true',     // must be false on localhost
+    sameSite: process.env.COOKIE_SAMESITE || 'Lax',
   }
+  
 };
