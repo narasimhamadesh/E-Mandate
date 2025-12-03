@@ -11,6 +11,8 @@ const db = mysql.createPool({
   queueLimit: 0
 });
 
+
+
 // Test DB connection
 (async () => {
   try {
@@ -21,5 +23,8 @@ const db = mysql.createPool({
     console.error("Database connection failed:", err);
   }
 })();
+
+
+
 
 module.exports = db;

@@ -19,7 +19,7 @@ const {
 router.get("/", authenticatedUser, authorisedRole("admin"), getBanks);
 
 // Add bank
-router.post("/add", authenticatedUser, authorisedRole("admin"), addBank);
+router.post("/", authenticatedUser, authorisedRole("admin"), addBank);
 
 // Update bank
 router.put("/:id", authenticatedUser, authorisedRole("admin"), updateBank);
