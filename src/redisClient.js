@@ -28,9 +28,9 @@ redis.on('ready', () => {
   console.log('🚀 Redis is ready to use');
 });
 
-// ❌ Log if Redis fails
+// Log if Redis fails
 redis.on('error', (err) => {
-  console.error('❌ Redis error:', err);
+  console.error('Redis error:', err);
 });
 
 // ⚠️ Log when Redis disconnects

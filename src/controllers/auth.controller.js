@@ -7,7 +7,9 @@ const crypto = require('crypto');
 const axios = require('axios');
 const os = require('os');
 const requestIp = require('request-ip');
-const nodemailer = require('nodemailer');
+// const nodemailer = require('nodemailer');
+
+const { sendEmail } = require("../services/email.service");
 
 const db = require('../db');
 const config = require('../config');
@@ -66,11 +68,11 @@ const verifyCaptcha = async (captchaToken) => {
   }
 };
 
-// Nodemailer transporter (same as old)
-const transporter = nodemailer.createTransport({
-  service: 'Gmail',
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-});
+// // Nodemailer transporter (same as old)
+// const transporter = nodemailer.createTransport({
+//   service: 'Gmail',
+//   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+// });
 
 // Send password expiry warning email
 const sendPasswordExpiryNotification = (user, daysRemaining) => {
@@ -337,6 +339,70 @@ exports.logout = async (req, res) => {
 // -----------------------------------------------
 // FORGOT PASSWORD (unchanged except IP logging)
 // -----------------------------------------------
+// exports.forgotPassword = async (req, res) => {
+//   const { email } = req.body;
+//   const ip = getIpAddress(req);
+
+//   if (!email) {
+//     return res.status(400).json({ message: 'Email required' });
+//   }
+
+//   try {
+//     // 1. Check user exists
+//     const [rows] = await db.query(
+//       'SELECT id, name, email FROM users WHERE email = ? LIMIT 1',
+//       [email]
+//     );
+
+//     if (rows.length === 0) {
+//       return res.status(400).json({ message: 'User not found' });
+//     }
+
+//     const user = rows[0];
+
+//     // 2. Generate reset token
+//     const resetToken = crypto.randomBytes(32).toString('hex');
+//     const hashed = await bcrypt.hash(resetToken, 10);
+//     const expiry = new Date(Date.now() + 3600000); // 1 hour
+
+//     // 3. Save token & expiry
+//     await db.query(
+//       `UPDATE users 
+//        SET reset_token = ?, reset_token_expiry = ?
+//        WHERE id = ?`,
+//       [hashed, expiry, user.id]
+//     );
+
+//     // 4. Log activity
+//     logUserActivity(
+//       user.id,
+//       user.name,
+//       user.email,
+//       ip,
+//       'Requested password reset'
+//     );
+
+//     // 5. Reset URL
+//     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+//     // 6. Send email
+//     await transporter.sendMail({
+//       from: process.env.EMAIL_USER,
+//       to: email,
+//       subject: 'Password Reset',
+//       text: `Click the link below to reset your password:\n${resetUrl}\n\nThis link is valid for 1 hour.`,
+//     });
+
+//     return res.json({ message: 'Reset link sent to email' });
+
+//   } catch (err) {
+//     console.error('Forgot Password Error:', err);
+//     return res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+   // <-- import email service
+
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   const ip = getIpAddress(req);
@@ -361,9 +427,9 @@ exports.forgotPassword = async (req, res) => {
     // 2. Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashed = await bcrypt.hash(resetToken, 10);
-    const expiry = new Date(Date.now() + 3600000); // 1 hour
+    const expiry = new Date(Date.now() + 3600000);
 
-    // 3. Save token & expiry
+    // 3. Save token
     await db.query(
       `UPDATE users 
        SET reset_token = ?, reset_token_expiry = ?
@@ -383,12 +449,17 @@ exports.forgotPassword = async (req, res) => {
     // 5. Reset URL
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-    // 6. Send email
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    // 6. Send email using shared sendEmail()
+    await sendEmail({
       to: email,
-      subject: 'Password Reset',
+      subject: "Password Reset Request",
       text: `Click the link below to reset your password:\n${resetUrl}\n\nThis link is valid for 1 hour.`,
+      html: `
+        <p>Hello ${user.name},</p>
+        <p>Click the link below to reset your password:</p>
+        <p><a href="${resetUrl}">${resetUrl}</a></p>
+        <p>This link is valid for 1 hour.</p>
+      `,
     });
 
     return res.json({ message: 'Reset link sent to email' });
@@ -398,6 +469,7 @@ exports.forgotPassword = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 
 exports.resetPassword = async (req, res) => {

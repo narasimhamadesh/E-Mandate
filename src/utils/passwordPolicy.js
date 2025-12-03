@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const crypto = require("crypto");
 
 const passwordSchema = Joi.string()
   .min(10)
@@ -14,4 +15,24 @@ function validatePassword(password) {
   return error ? error.message : null;
 }
 
-module.exports = { validatePassword };
+
+
+
+
+
+// Generate a strong random password
+function generatePassword(length = 12){
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=-`~[]{}|;\':",./<>?';
+
+  let pwd = "";
+  for (let i = 0; i < length; i++) {
+    pwd += chars.charAt(crypto.randomInt(0, chars.length));
+  }
+  return pwd;
+};
+
+
+
+
+module.exports = { validatePassword , generatePassword };
