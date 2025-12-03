@@ -32,16 +32,16 @@ exports.saveUMRN = async (req, res) => {
     }
 
     // Check mandate
-    const [mandate] = await db.promise().query(
+    const [rows] = await db.query(
       "SELECT approval_status FROM e_mandates WHERE mandateID = ?",
       [mandateId]
     );
 
-    if (!mandate.length) {
+    if (rows.length === 0) {
       return res.status(404).json({ error: "Mandate not found" });
     }
 
-    if (mandate[0].approval_status !== "Pending") {
+    if (rows[0].approval_status !== "Pending") {
       return res.status(400).json({
         error: "Mandate is expired or already authorized.",
       });
@@ -50,13 +50,18 @@ exports.saveUMRN = async (req, res) => {
     const umrnNumber = generateUMRN();
     console.log("Generated UMRN:", umrnNumber);
 
-    const currentTimestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const currentTimestamp = new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
 
-    // Insert into umrn_authorizations
-    await promisifiedQuery(
-      `INSERT INTO umrn_authorizations
+    // Insert UMRN authorization
+    await db.query(
+      `
+      INSERT INTO umrn_authorizations
       (mandate_id, umrn_number, authorization_method, authorized_at, status)
-      VALUES (?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?)
+      `,
       [
         mandateId,
         umrnNumber,
@@ -66,11 +71,17 @@ exports.saveUMRN = async (req, res) => {
       ]
     );
 
-    // Update mandate
-    await promisifiedQuery(
-      `UPDATE e_mandates
-       SET status='AUTHORIZED', approval_status='AUTHORIZED', umrn_number=?, authorized_at=?
-       WHERE mandateID=?`,
+    // Update mandate table
+    await db.query(
+      `
+      UPDATE e_mandates
+      SET 
+        status='AUTHORIZED',
+        approval_status='AUTHORIZED',
+        umrn_number=?,
+        authorized_at=?
+      WHERE mandateID=?
+      `,
       [umrnNumber, authorizedAt || currentTimestamp, mandateId]
     );
 
@@ -84,15 +95,17 @@ exports.saveUMRN = async (req, res) => {
         authorizedAt: authorizedAt || currentTimestamp,
       },
     });
+
   } catch (error) {
     console.error("Error in saveUMRN:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: "Failed to authorize e-mandate",
       message: error.message,
     });
   }
 };
+
 
 // ----------------------------
 // 2. Get UMRN by Mandate ID
@@ -268,6 +281,8 @@ exports.cancelUMRN = async (req, res) => {
 // ----------------------------
 exports.sendOTP = async (req, res) => {
   const { mandateId, mobileNumber } = req.body;
+
+  console.log("sendOTP called with:", req.body);
 
   if (!mandateId || !mobileNumber) {
     return res.status(400).json({

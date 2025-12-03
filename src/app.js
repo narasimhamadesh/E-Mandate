@@ -33,7 +33,7 @@ app.use('/api', userLogsRoutes);
 app.use('/api', mandateCountRoutes);
 app.use("/api/clients", clientRoute);
 app.use('/api/ocr', ocrRoute);
-app.use('/umrn', umrnRoute);
+app.use('/api/umrn', umrnRoute);
 
 
 

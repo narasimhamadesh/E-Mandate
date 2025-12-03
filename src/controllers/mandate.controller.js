@@ -14,92 +14,171 @@ const MANDATE_EXPIRY_MINS = 1;
 
 
 
+// exports.createMandate = async (req, res) => {
+//     const {
+//         mobileNumber,
+//         fullName,
+//         email,
+//         loanAmount,
+//         bankName,
+//         paymentType,
+//         accountNumber,
+//         accountType,
+//         ifscCode,
+//         branchName,
+//         mandateAmount,
+//         maximumCollectionAmount,
+//         collectionType,
+//         frequency,
+//         collectionFirstDate,
+//         collectionLastDate,
+//         signature,
+//         userId,
+//     } = req.body;
+
+//     const mandateId = generateMandateId(); // ✅ Generate here
+
+//     try {
+//         await validateIFSCDetails(ifscCode, bankName, branchName);
+
+//         const sql = `
+//           INSERT INTO e_mandates (
+//             mandateId, mobile_number, full_name, email, loan_amount,
+//             bank_name, payment_type, account_number, account_type, ifsc_code,
+//             branch_name, mandate_amount, max_collection_amount, collection_type,
+//             frequency, collection_first_date, collection_last_date, signature,
+//             approval_status, user_id, created_at
+//           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+//         `;
+
+//         db.query(
+//             sql,
+//             [
+//                 mandateId,
+//                 mobileNumber,
+//                 fullName,
+//                 email,
+//                 loanAmount,
+//                 bankName,
+//                 paymentType,
+//                 accountNumber,
+//                 accountType,
+//                 ifscCode,
+//                 branchName,
+//                 mandateAmount,
+//                 maximumCollectionAmount,
+//                 collectionType,
+//                 frequency,
+//                 collectionFirstDate,
+//                 collectionLastDate,
+//                 signature,
+//                 "Pending",
+//                 userId,
+//             ],
+//             async (err, result) => {
+//                 if (err) {
+//                     console.error("Database Error:", err);
+//                     return res.status(500).json({ error: "Failed to create mandate" });
+//                 }
+
+//                 // ✅ Send the email after mandate is inserted
+//                 await sendMandateEmail(email, fullName, mandateId);
+
+//                 // ✅ Then respond to frontend
+//                 res.status(201).json({
+//                     message: "E-Mandate created successfully",
+//                     mandateId,
+//                     bankName,
+//                     branchName,
+//                 });
+//             }
+//         );
+//     } catch (error) {
+//         console.error("Validation Error:", error);
+//         res.status(400).json({ error: error.message });
+//     }
+// };
+
+
 exports.createMandate = async (req, res) => {
-    const {
-        mobileNumber,
-        fullName,
-        email,
-        loanAmount,
-        bankName,
-        paymentType,
-        accountNumber,
-        accountType,
-        ifscCode,
-        branchName,
-        mandateAmount,
-        maximumCollectionAmount,
-        collectionType,
-        frequency,
-        collectionFirstDate,
-        collectionLastDate,
-        signature,
-        userId,
-    } = req.body;
+  const {
+      mobileNumber,
+      fullName,
+      email,
+      loanAmount,
+      bankName,
+      paymentType,
+      accountNumber,
+      accountType,
+      ifscCode,
+      branchName,
+      mandateAmount,
+      maximumCollectionAmount,
+      collectionType,
+      frequency,
+      collectionFirstDate,
+      collectionLastDate,
+      signature,
+      userId,
+  } = req.body;
 
-    const mandateId = generateMandateId(); // ✅ Generate here
+  const mandateId = generateMandateId();
 
-    try {
-        await validateIFSCDetails(ifscCode, bankName, branchName);
+  try {
+      // Validate IFSC before inserting
+      await validateIFSCDetails(ifscCode, bankName, branchName);
 
-        const sql = `
-          INSERT INTO e_mandates (
-            mandateId, mobile_number, full_name, email, loan_amount,
-            bank_name, payment_type, account_number, account_type, ifsc_code,
-            branch_name, mandate_amount, max_collection_amount, collection_type,
-            frequency, collection_first_date, collection_last_date, signature,
-            approval_status, user_id, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-        `;
+      const sql = `
+        INSERT INTO e_mandates (
+          mandateId, mobile_number, full_name, email, loan_amount,
+          bank_name, payment_type, account_number, account_type,
+          ifsc_code, branch_name, mandate_amount, max_collection_amount,
+          collection_type, frequency, collection_first_date, collection_last_date,
+          signature, approval_status, user_id, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      `;
 
-        db.query(
-            sql,
-            [
-                mandateId,
-                mobileNumber,
-                fullName,
-                email,
-                loanAmount,
-                bankName,
-                paymentType,
-                accountNumber,
-                accountType,
-                ifscCode,
-                branchName,
-                mandateAmount,
-                maximumCollectionAmount,
-                collectionType,
-                frequency,
-                collectionFirstDate,
-                collectionLastDate,
-                signature,
-                "Pending",
-                userId,
-            ],
-            async (err, result) => {
-                if (err) {
-                    console.error("Database Error:", err);
-                    return res.status(500).json({ error: "Failed to create mandate" });
-                }
+      const params = [
+          mandateId,
+          mobileNumber,
+          fullName,
+          email,
+          loanAmount,
+          bankName,
+          paymentType,
+          accountNumber,
+          accountType,
+          ifscCode,
+          branchName,
+          mandateAmount,
+          maximumCollectionAmount,
+          collectionType,
+          frequency,
+          collectionFirstDate,
+          collectionLastDate,
+          signature,
+          "Pending",
+          userId,
+      ];
 
-                // ✅ Send the email after mandate is inserted
-                await sendMandateEmail(email, fullName, mandateId);
+      // ❗ FIX: Use await instead of callback
+      const [result] = await db.query(sql, params);
 
-                // ✅ Then respond to frontend
-                res.status(201).json({
-                    message: "E-Mandate created successfully",
-                    mandateId,
-                    bankName,
-                    branchName,
-                });
-            }
-        );
-    } catch (error) {
-        console.error("Validation Error:", error);
-        res.status(400).json({ error: error.message });
-    }
+      // Send email after insert
+      await sendMandateEmail(email, fullName, mandateId);
+
+      return res.status(201).json({
+          message: "E-Mandate created successfully",
+          mandateId,
+          bankName,
+          branchName,
+      });
+
+  } catch (error) {
+      console.error("Create Mandate Error:", error);
+      return res.status(400).json({ error: error.message || "Something went wrong" });
+  }
 };
-
-
 
 
 exports.getMandateById = (req, res) => {
@@ -346,21 +425,26 @@ exports.getUserMandates = (req, res) => {
 
 
 
-exports.getAllMandates = (req, res) => {
-    const { userId } = req.params;
-    let sql = "SELECT * FROM e_mandates";
-    let params = [];
-    if (userId && userId !== "0001") {
-        sql = "SELECT * FROM e_mandates WHERE user_id = ?";
-        params = [userId];
-    }
-    db.query(sql, params, (err, result) => {
-        if (err) {
-            console.error("Error fetching mandates:", err);
-            return res.status(500).json({ error: "Failed to fetch mandates." });
-        }
-        res.json(result);
-    });
+exports.getAllMandates = async (req, res) => {
+  try {
+      const { userId } = req.params;
+
+      let sql = "SELECT * FROM e_mandates";
+      let params = [];
+
+      if (userId && userId !== "0001") {
+          sql = "SELECT * FROM e_mandates WHERE user_id = ?";
+          params = [userId];
+      }
+
+      const [result] = await db.query(sql, params);
+
+      return res.status(200).json(result);
+
+  } catch (err) {
+      console.error("Error fetching mandates:", err);
+      return res.status(500).json({ error: "Failed to fetch mandates." });
+  }
 };
 
 
